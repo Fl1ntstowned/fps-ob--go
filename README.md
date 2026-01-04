@@ -20,7 +20,7 @@ This browser extension enables multiplayer connectivity for the on-chain FPS gam
 2. Open your browser and go to `chrome://extensions/`
 3. Enable **Developer mode** (toggle in top right)
 4. Click **Load unpacked**
-5. Select the extracted folder containing `manifest.json`
+5. Navigate INTO the extracted folder (e.g., `fps-ob--go-main`) and select the folder that contains `manifest.json` directly - you should see the manifest.json file listed when you open the folder
 6. The extension icon should appear in your toolbar
 
 ### After Installation
