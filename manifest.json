@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "FPS Multiplayer Game",
+  "version": "1.0.0",
+  "description": "Team-based FPS game on Bitcoin ordinals",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:3003/*",
+    "https://fps-game-backend-production.up.railway.app/*",
+    "https://*.up.railway.app/*",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "FPS Game Settings"
+  }
+}
