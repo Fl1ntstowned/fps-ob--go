@@ -4,9 +4,9 @@ Play the first on-chain multiplayer FPS game inscribed on Bitcoin Ordinals.
 
 ## Game Inscription
 
-**Inscription ID:** `7d789769735d0b621df56041bee30362d459f307de8813bd147a591a0a93cb66i0`
+**Inscription ID:** `49ebb16656d91068a312c2fab463a6ce0ddeadfd822c1f2aa7ae6e12e5019068i0`
 
-**Play here:** [ord.io/7d789769735d0b621df56041bee30362d459f307de8813bd147a591a0a93cb66i0](https://ord.io/7d789769735d0b621df56041bee30362d459f307de8813bd147a591a0a93cb66i0)
+**Play here:** [ord.io/preview/49ebb16656d91068a312c2fab463a6ce0ddeadfd822c1f2aa7ae6e12e5019068i0](https://www.ord.io/preview/49ebb16656d91068a312c2fab463a6ce0ddeadfd822c1f2aa7ae6e12e5019068i0?type=text/html&raw=true)
 
 > **Recommended:** Use ord.io and click the fullscreen button for the best experience.
 
