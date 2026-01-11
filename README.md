@@ -1,12 +1,12 @@
-# FPS Multiplayer Bridge
+# Ordinals Arcade - Multiplayer Bridge
 
-Play the first on-chain multiplayer FPS game inscribed on Bitcoin Ordinals.
+Play on-chain multiplayer games inscribed on Bitcoin Ordinals.
 
-## Game Inscription
+## Game Hub Inscription
 
-**Inscription ID:** `49ebb16656d91068a312c2fab463a6ce0ddeadfd822c1f2aa7ae6e12e5019068i0`
+**Inscription ID:** `8e6a34910a55e0e91dd5b1fc017dec27e9574d190bb00d6cb9ed4acbe05897f7i0`
 
-**Play here:** [ord.io/preview/49ebb16656d91068a312c2fab463a6ce0ddeadfd822c1f2aa7ae6e12e5019068i0](https://www.ord.io/preview/49ebb16656d91068a312c2fab463a6ce0ddeadfd822c1f2aa7ae6e12e5019068i0?type=text/html&raw=true)
+**Play here:** [ord.io/preview/8e6a34910a55e0e91dd5b1fc017dec27e9574d190bb00d6cb9ed4acbe05897f7i0](https://www.ord.io/preview/8e6a34910a55e0e91dd5b1fc017dec27e9574d190bb00d6cb9ed4acbe05897f7i0?type=text/html&raw=true)
 
 > **Recommended:** Use ord.io and click the fullscreen button for the best experience.
 
@@ -30,8 +30,9 @@ This browser extension enables multiplayer connectivity for the on-chain FPS gam
 3. Enter your player name and join the game
 4. If you see other players, you're connected!
 
-## Controls
+## Games Available
 
+### FPS Arena
 - **WASD** - Move
 - **Mouse** - Look around
 - **Left Click** - Shoot
@@ -39,12 +40,16 @@ This browser extension enables multiplayer connectivity for the on-chain FPS gam
 - **Space** - Jump
 - **R** - Reload
 
+### Chess
+- **Click** - Select and move pieces
+- Play against other players in real-time
+
 ## Beta Notice
 
-This game is currently in beta. If you're not seeing other players, make sure the extension is properly installed and enabled.
+These games are currently in beta. If you're not seeing other players, make sure the extension is properly installed and enabled.
 
 For access or support, contact **@ObiWanSatoshi** on X.
 
 ## About
 
-The first fully on-chain multiplayer FPS experience, inscribed permanently on Bitcoin. No servers hosting game files - everything runs from the blockchain.
+Fully on-chain multiplayer games inscribed permanently on Bitcoin. No servers hosting game files - everything runs from the blockchain.

@@ -181,12 +181,28 @@
       opacity: 0.6;
       margin-top: 6px;
     }
+    .url-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .url-label {
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 40px;
+      opacity: 0.8;
+    }
+    .url-row input {
+      flex: 1;
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>FPS Multiplayer</h1>
-    <p class="subtitle">Team-based shooter on Bitcoin Ordinals</p>
+    <h1>Obi's Game Hub</h1>
+    <p class="subtitle">Multiplayer games on Bitcoin Ordinals</p>
   </div>
   <div class="content">
     <div class="section">
@@ -195,7 +211,14 @@
         <button id="useLocalBtn" class="env-button">Local</button>
         <button id="useProductionBtn" class="env-button blue">Production</button>
       </div>
-      <input type="text" id="backendUrl" placeholder="Backend URL" readonly>
+      <div class="url-row">
+        <span class="url-label">FPS</span>
+        <input type="text" id="backendUrl" placeholder="FPS Backend URL" readonly>
+      </div>
+      <div class="url-row">
+        <span class="url-label">Chess</span>
+        <input type="text" id="chessBackendUrl" placeholder="Chess Backend URL" readonly>
+      </div>
       <div class="help-text" id="helpText">Select environment</div>
     </div>
     <div class="section">
