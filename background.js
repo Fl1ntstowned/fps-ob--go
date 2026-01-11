@@ -1,16 +1,16 @@
 console.log('[Game Hub] Background service worker started');
 
 let serverConfig = {
-  fps: 'http://localhost:3003',
-  chess: 'http://localhost:3004'
+  fps: 'https://fps-game-backend-production.up.railway.app',
+  chess: 'https://chess-game-backend-production.up.railway.app'
 };
 
 chrome.runtime.onInstalled.addListener((details) => {
   console.log('[Game Hub] Extension installed/updated', details.reason);
   if (details.reason === 'install') {
     chrome.storage.local.set({
-      fpsBackendUrl: 'http://localhost:3003',
-      chessBackendUrl: 'http://localhost:3004'
+      fpsBackendUrl: 'https://fps-game-backend-production.up.railway.app',
+      chessBackendUrl: 'https://chess-game-backend-production.up.railway.app'
     });
   }
 });
@@ -56,8 +56,8 @@ console.log('[Game Hub] Socket.io loaded');
 async function loadServerConfig() {
   const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl']);
   serverConfig = {
-    fps: stored.fpsBackendUrl || 'http://localhost:3003',
-    chess: stored.chessBackendUrl || 'http://localhost:3004'
+    fps: stored.fpsBackendUrl || 'https://fps-game-backend-production.up.railway.app',
+    chess: stored.chessBackendUrl || 'https://chess-game-backend-production.up.railway.app'
   };
   console.log('[Game Hub] Loaded server config:', serverConfig);
 }
