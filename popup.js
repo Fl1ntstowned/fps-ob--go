@@ -4,8 +4,8 @@ const FPS_PRODUCTION_URL = 'https://fps-game-backend-production.up.railway.app';
 const CHESS_LOCAL_URL = 'http://localhost:3004';
 const CHESS_PRODUCTION_URL = 'https://chess-game-backend-production.up.railway.app';
 
-let backendUrl = FPS_LOCAL_URL;
-let chessBackendUrl = CHESS_LOCAL_URL;
+let backendUrl = FPS_PRODUCTION_URL;
+let chessBackendUrl = CHESS_PRODUCTION_URL;
 
 const backendUrlInput = document.getElementById('backendUrl');
 const chessBackendUrlInput = document.getElementById('chessBackendUrl');
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (stored.chessBackendUrl) {
     chessBackendUrl = stored.chessBackendUrl;
   } else {
-    chessBackendUrl = backendUrl === FPS_LOCAL_URL ? CHESS_LOCAL_URL : CHESS_PRODUCTION_URL;
+    chessBackendUrl = backendUrl === FPS_PRODUCTION_URL ? CHESS_PRODUCTION_URL : CHESS_LOCAL_URL;
   }
 
   backendUrlInput.value = backendUrl;
@@ -41,13 +41,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function detectEnvironment() {
-  const isLocal = await testBackendHealth(FPS_LOCAL_URL);
-  if (isLocal) {
-    helpText.textContent = 'Local development servers';
-    return FPS_LOCAL_URL;
+  const isProduction = await testBackendHealth(FPS_PRODUCTION_URL);
+  if (isProduction) {
+    helpText.textContent = 'Railway production servers';
+    return FPS_PRODUCTION_URL;
   }
-  helpText.textContent = 'Railway production servers';
-  return FPS_PRODUCTION_URL;
+  helpText.textContent = 'Local development servers';
+  return FPS_LOCAL_URL;
 }
 
 async function testBackendHealth(url) {
