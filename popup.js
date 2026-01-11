@@ -1,8 +1,6 @@
-// FPS Backend URLs
 const FPS_LOCAL_URL = 'http://localhost:3003';
 const FPS_PRODUCTION_URL = 'https://fps-game-backend-production.up.railway.app';
 
-// Chess Backend URLs
 const CHESS_LOCAL_URL = 'http://localhost:3004';
 const CHESS_PRODUCTION_URL = 'https://chess-game-backend-production.up.railway.app';
 
@@ -28,11 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     backendUrl = await detectEnvironment();
   }
 
-  // Set chess URL based on environment (local or production)
   if (stored.chessBackendUrl) {
     chessBackendUrl = stored.chessBackendUrl;
   } else {
-    // Match chess environment to FPS environment
     chessBackendUrl = backendUrl === FPS_LOCAL_URL ? CHESS_LOCAL_URL : CHESS_PRODUCTION_URL;
   }
 
