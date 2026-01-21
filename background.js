@@ -1,16 +1,19 @@
 console.log('[Game Hub] Background service worker started');
 
+// ===== GAME SERVER CONFIGURATION =====
 let serverConfig = {
-  fps: 'https://fps-game-backend-production.up.railway.app',
-  chess: 'https://chess-game-backend-production.up.railway.app'
+  fps: 'http://localhost:3003',
+  chess: 'http://localhost:3004',
+  poker: 'http://localhost:3005'
 };
 
 chrome.runtime.onInstalled.addListener((details) => {
   console.log('[Game Hub] Extension installed/updated', details.reason);
   if (details.reason === 'install') {
     chrome.storage.local.set({
-      fpsBackendUrl: 'https://fps-game-backend-production.up.railway.app',
-      chessBackendUrl: 'https://chess-game-backend-production.up.railway.app'
+      fpsBackendUrl: 'http://localhost:3003',
+      chessBackendUrl: 'http://localhost:3004',
+      pokerBackendUrl: 'http://localhost:3005'
     });
   }
 });
@@ -21,9 +24,12 @@ chrome.runtime.onStartup.addListener(() => {
 
 importScripts('socket.io.min.js');
 
-const tabSockets = new Map();
-const processedRequests = new Map();
-const REQUEST_EXPIRY_MS = 5000;
+// Tab sockets now store game type
+const tabSockets = new Map(); // tabId -> { socket, gameType }
+
+// Deduplication: track processed message requestIds to prevent duplicate sends
+const processedRequests = new Map(); // tabId -> Set of requestIds
+const REQUEST_EXPIRY_MS = 5000; // Clean up old requestIds after 5 seconds
 
 function isRequestProcessed(tabId, requestId) {
   if (!requestId) return false;
@@ -39,8 +45,10 @@ function isRequestProcessed(tabId, requestId) {
     return true;
   }
 
+  // Mark as processed with timestamp
   tabRequests.set(requestId, Date.now());
 
+  // Clean up old entries
   const now = Date.now();
   for (const [id, timestamp] of tabRequests.entries()) {
     if (now - timestamp > REQUEST_EXPIRY_MS) {
@@ -53,26 +61,85 @@ function isRequestProcessed(tabId, requestId) {
 
 console.log('[Game Hub] Socket.io loaded');
 
+// Load server config from storage
 async function loadServerConfig() {
-  const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl']);
+  const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl', 'pokerBackendUrl']);
   serverConfig = {
-    fps: stored.fpsBackendUrl || 'https://fps-game-backend-production.up.railway.app',
-    chess: stored.chessBackendUrl || 'https://chess-game-backend-production.up.railway.app'
+    fps: stored.fpsBackendUrl || 'http://localhost:3003',
+    chess: stored.chessBackendUrl || 'http://localhost:3004',
+    poker: stored.pokerBackendUrl || 'http://localhost:3005'
   };
   console.log('[Game Hub] Loaded server config:', serverConfig);
 }
 
 loadServerConfig();
 
+// ===== POKER AUTHENTICATION VIA HTTP API =====
+const tabAuthTokens = new Map(); // tabId -> token
+
+async function handlePokerLogin(tabId, username, password) {
+  const backendUrl = serverConfig.poker;
+  console.log('[Game Hub] Tab', tabId, 'attempting poker login for:', username);
+
+  try {
+    const response = await fetch(`${backendUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      tabAuthTokens.set(tabId, result.token);
+      console.log('[Game Hub] Tab', tabId, 'poker login successful:', result.username, 'Balance:', result.balance);
+    } else {
+      console.log('[Game Hub] Tab', tabId, 'poker login failed:', result.error);
+    }
+
+    sendToTab(tabId, { type: 'POKER_AUTH_RESULT', ...result });
+
+  } catch (error) {
+    console.error('[Game Hub] Tab', tabId, 'poker login error:', error);
+    sendToTab(tabId, { type: 'POKER_AUTH_RESULT', success: false, error: 'Connection error' });
+  }
+}
+
+async function handlePokerLogout(tabId) {
+  const backendUrl = serverConfig.poker;
+  const token = tabAuthTokens.get(tabId);
+
+  console.log('[Game Hub] Tab', tabId, 'logging out of poker');
+
+  if (token) {
+    try {
+      await fetch(`${backendUrl}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (error) {
+      console.log('[Game Hub] Tab', tabId, 'logout error (ignored):', error.message);
+    }
+    tabAuthTokens.delete(tabId);
+  }
+
+  sendToTab(tabId, { type: 'POKER_LOGGED_OUT' });
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const tabId = sender.tab?.id;
   console.log('[Game Hub] Message:', message.type, 'from tab:', tabId, 'requestId:', message.requestId);
 
+  // Check for duplicate requests (prevents multi-frame duplicate sends)
   if (message.requestId && isRequestProcessed(tabId, message.requestId)) {
     sendResponse({ success: true, duplicate: true });
     return true;
   }
 
+  // ===== FPS GAME INIT =====
   if (message.type === 'FPS_INIT') {
     handleFpsInit(tabId).then(() => {
       sendResponse({ success: true });
@@ -83,6 +150,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // ===== CHESS GAME INIT =====
   if (message.type === 'GAME_INIT' && message.gameType === 'chess') {
     handleChessInit(tabId).then(() => {
       sendResponse({ success: true, gameType: 'chess' });
@@ -93,6 +161,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // ===== POKER GAME INIT =====
+  if (message.type === 'GAME_INIT' && message.gameType === 'poker') {
+    handlePokerInit(tabId).then(() => {
+      sendResponse({ success: true, gameType: 'poker' });
+    }).catch(error => {
+      console.error('[Game Hub] Poker Init error:', error);
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  }
+
+  // Get tab socket info
   const tabSocket = tabSockets.get(tabId);
   if (!tabSocket || !tabSocket.socket || !tabSocket.socket.connected) {
     sendResponse({ success: false, error: 'Not connected to backend' });
@@ -101,6 +181,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   const gameType = tabSocket.gameType;
 
+  // ===== FPS MESSAGES =====
   if (gameType === 'fps') {
     if (message.type === 'FPS_JOIN_GAME') {
       tabSocket.socket.emit('joinGame', { playerName: message.playerName });
@@ -158,6 +239,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   }
 
+  // ===== CHESS MESSAGES =====
   if (gameType === 'chess') {
     if (message.type === 'GAME_SET_PLAYER_NAME') {
       tabSocket.socket.emit('setPlayerName', message.playerName);
@@ -233,11 +315,99 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   }
 
+  // ===== POKER MESSAGES =====
+  if (gameType === 'poker') {
+    // Authentication via HTTP API
+    if (message.type === 'POKER_LOGIN') {
+      handlePokerLogin(tabId, message.username, message.password);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_LOGOUT') {
+      handlePokerLogout(tabId);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    // Socket authentication with token
+    if (message.type === 'POKER_AUTHENTICATE') {
+      tabSocket.socket.emit('authenticate', { token: message.token });
+      console.log('[Game Hub] Tab', tabId, 'authenticating socket');
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'GAME_SET_PLAYER_NAME') {
+      tabSocket.socket.emit('setPlayerName', message.playerName);
+      console.log('[Game Hub] Tab', tabId, 'set poker player name:', message.playerName);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_JOIN_QUEUE') {
+      tabSocket.socket.emit('joinQueue');
+      console.log('[Game Hub] Tab', tabId, 'joining poker queue');
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_LEAVE_TABLE') {
+      tabSocket.socket.emit('leaveTable');
+      console.log('[Game Hub] Tab', tabId, 'leaving poker table');
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_FOLD') {
+      tabSocket.socket.emit('fold');
+      console.log('[Game Hub] Tab', tabId, 'folds');
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_CHECK') {
+      tabSocket.socket.emit('check');
+      console.log('[Game Hub] Tab', tabId, 'checks');
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_CALL') {
+      tabSocket.socket.emit('call');
+      console.log('[Game Hub] Tab', tabId, 'calls');
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_BET') {
+      tabSocket.socket.emit('bet', { amount: message.amount });
+      console.log('[Game Hub] Tab', tabId, 'bets', message.amount);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_RAISE') {
+      tabSocket.socket.emit('raise', { amount: message.amount });
+      console.log('[Game Hub] Tab', tabId, 'raises to', message.amount);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_ALL_IN') {
+      tabSocket.socket.emit('allIn');
+      console.log('[Game Hub] Tab', tabId, 'goes all-in');
+      sendResponse({ success: true });
+      return true;
+    }
+  }
+
   console.log('[Game Hub] Unhandled message type:', message.type, 'for game:', gameType);
   sendResponse({ success: true, unhandled: true });
   return true;
 });
 
+// ===== FPS INIT =====
 async function handleFpsInit(tabId) {
   console.log('[Game Hub] FPS_INIT for tab:', tabId);
   await loadServerConfig();
@@ -257,6 +427,7 @@ async function handleFpsInit(tabId) {
   await createFpsSocket(tabId);
 }
 
+// ===== CHESS INIT =====
 async function handleChessInit(tabId) {
   console.log('[Game Hub] GAME_INIT (chess) for tab:', tabId);
   await loadServerConfig();
@@ -276,6 +447,7 @@ async function handleChessInit(tabId) {
   await createChessSocket(tabId);
 }
 
+// ===== FPS SOCKET =====
 async function createFpsSocket(tabId) {
   console.log('[Game Hub] Creating FPS socket for tab:', tabId, 'URL:', serverConfig.fps);
 
@@ -396,6 +568,7 @@ async function createFpsSocket(tabId) {
   });
 }
 
+// ===== CHESS SOCKET =====
 async function createChessSocket(tabId) {
   console.log('[Game Hub] Creating Chess socket for tab:', tabId, 'URL:', serverConfig.chess);
 
@@ -490,6 +663,120 @@ async function createChessSocket(tabId) {
   });
 }
 
+// ===== POKER INIT =====
+async function handlePokerInit(tabId) {
+  console.log('[Game Hub] GAME_INIT (poker) for tab:', tabId);
+  await loadServerConfig();
+
+  if (tabSockets.has(tabId)) {
+    const existing = tabSockets.get(tabId);
+    if (existing.socket && existing.socket.connected && existing.gameType === 'poker') {
+      console.log('[Game Hub] Tab', tabId, 'already has active poker socket');
+      sendToTab(tabId, { type: 'GAME_CONNECTED', gameType: 'poker' });
+      return;
+    } else {
+      if (existing.socket) existing.socket.disconnect();
+      tabSockets.delete(tabId);
+    }
+  }
+
+  await createPokerSocket(tabId);
+}
+
+// ===== POKER SOCKET =====
+async function createPokerSocket(tabId) {
+  console.log('[Game Hub] Creating Poker socket for tab:', tabId, 'URL:', serverConfig.poker);
+
+  const socketConfig = {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 10
+  };
+
+  const socket = io(serverConfig.poker, socketConfig);
+  tabSockets.set(tabId, { socket: socket, gameType: 'poker' });
+
+  socket.on('connect', () => {
+    console.log('[Game Hub] Tab', tabId, 'Poker connected, Socket ID:', socket.id);
+    sendToTab(tabId, { type: 'GAME_CONNECTED', gameType: 'poker' });
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('[Game Hub] Tab', tabId, 'Poker disconnected:', reason);
+    sendToTab(tabId, { type: 'GAME_DISCONNECTED', gameType: 'poker' });
+    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
+      tabSockets.delete(tabId);
+    }
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('[Game Hub] Tab', tabId, 'Poker connection error:', error.message);
+  });
+
+  socket.on('yourSocketId', (data) => {
+    console.log('[Game Hub] Tab', tabId, 'Poker socket ID:', data.id);
+    sendToTab(tabId, { type: 'yourSocketId', id: data.id });
+  });
+
+  socket.on('authResult', (data) => {
+    console.log('[Game Hub] Tab', tabId, 'socket auth result:', data.success ? 'success' : 'failed');
+    sendToTab(tabId, { type: 'POKER_SOCKET_AUTH_RESULT', ...data });
+  });
+
+  socket.on('seated', (data) => {
+    console.log('[Game Hub] Tab', tabId, 'seated at poker table:', data.tableId, 'balance:', data.balance);
+    sendToTab(tabId, { type: 'POKER_SEATED', ...data });
+  });
+
+  socket.on('tableState', (state) => {
+    sendToTab(tabId, { type: 'POKER_TABLE_STATE', ...state });
+  });
+
+  socket.on('playerAction', (data) => {
+    sendToTab(tabId, { type: 'POKER_PLAYER_ACTION', ...data });
+  });
+
+  socket.on('handResult', (data) => {
+    console.log('[Game Hub] Tab', tabId, 'poker hand result');
+    sendToTab(tabId, { type: 'POKER_HAND_RESULT', ...data });
+  });
+
+  socket.on('invalidAction', (data) => {
+    sendToTab(tabId, { type: 'POKER_INVALID_ACTION', reason: data.reason });
+  });
+
+  socket.on('outOfChips', (data) => {
+    sendToTab(tabId, { type: 'POKER_OUT_OF_CHIPS', message: data?.message || 'You are out of chips!' });
+  });
+
+  socket.on('error', (data) => {
+    console.error('[Game Hub] Tab', tabId, 'poker error:', data.message);
+    sendToTab(tabId, { type: 'POKER_ERROR', message: data.message });
+  });
+
+  socket.on('globalStats', (stats) => {
+    sendToTab(tabId, { type: 'POKER_GLOBAL_STATS', stats });
+  });
+
+  // Spectator events
+  socket.on('spectating', (data) => {
+    console.log('[Game Hub] Tab', tabId, 'spectating poker table:', data.tableId);
+    sendToTab(tabId, { type: 'POKER_SPECTATING', ...data });
+  });
+
+  socket.on('spectatorToPlayer', (data) => {
+    console.log('[Game Hub] Tab', tabId, 'promoted from spectator to player');
+    sendToTab(tabId, { type: 'POKER_SPECTATOR_TO_PLAYER', ...data });
+  });
+
+  socket.on('leftTable', (data) => {
+    console.log('[Game Hub] Tab', tabId, 'left poker table');
+    sendToTab(tabId, { type: 'POKER_LEFT_TABLE', ...data });
+  });
+}
+
 async function sendToTab(tabId, data) {
   try {
     await chrome.tabs.sendMessage(tabId, data);
@@ -508,7 +795,10 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     if (tabSocket.socket) tabSocket.socket.disconnect();
     tabSockets.delete(tabId);
   }
+  // Clean up deduplication tracking for closed tab
   processedRequests.delete(tabId);
+  // Clean up auth tokens
+  tabAuthTokens.delete(tabId);
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -517,6 +807,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     const tabSocket = tabSockets.get(tabId);
     if (tabSocket && tabSocket.socket) tabSocket.socket.disconnect();
     tabSockets.delete(tabId);
+    // Clean up deduplication tracking for reloading tab
     processedRequests.delete(tabId);
   }
 });

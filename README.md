@@ -4,9 +4,9 @@ Play on-chain multiplayer games inscribed on Bitcoin Ordinals.
 
 ## Game Hub Inscription
 
-**Inscription ID:** `8e6a34910a55e0e91dd5b1fc017dec27e9574d190bb00d6cb9ed4acbe05897f7i0`
+**Inscription ID:** `28be770e0ecc136abb1235e35f947e0cdfbb10083b684770ceace40173fa7d6fi0`
 
-**Play here:** [ord.io/preview/8e6a34910a55e0e91dd5b1fc017dec27e9574d190bb00d6cb9ed4acbe05897f7i0](https://www.ord.io/preview/8e6a34910a55e0e91dd5b1fc017dec27e9574d190bb00d6cb9ed4acbe05897f7i0?type=text/html&raw=true)
+**Play here:** [ord.io/preview/28be770e0ecc136abb1235e35f947e0cdfbb10083b684770ceace40173fa7d6fi0](https://www.ord.io/preview/28be770e0ecc136abb1235e35f947e0cdfbb10083b684770ceace40173fa7d6fi0?type=text/html&raw=true)
 
 > **Recommended:** Use ord.io and click the fullscreen button for the best experience.
 
@@ -43,6 +43,10 @@ This browser extension enables multiplayer connectivity for the on-chain FPS gam
 ### Chess
 - **Click** - Select and move pieces
 - Play against other players in real-time
+
+### Poker
+- Texas Hold'em multiplayer poker
+- Bet, raise, call, fold against other players
 
 ## Beta Notice
 

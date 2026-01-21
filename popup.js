@@ -1,14 +1,22 @@
+// FPS Backend URLs
 const FPS_LOCAL_URL = 'http://localhost:3003';
 const FPS_PRODUCTION_URL = 'https://fps-game-backend-production.up.railway.app';
 
+// Chess Backend URLs
 const CHESS_LOCAL_URL = 'http://localhost:3004';
 const CHESS_PRODUCTION_URL = 'https://chess-game-backend-production.up.railway.app';
 
-let backendUrl = FPS_PRODUCTION_URL;
-let chessBackendUrl = CHESS_PRODUCTION_URL;
+// Poker Backend URLs
+const POKER_LOCAL_URL = 'http://localhost:3005';
+const POKER_PRODUCTION_URL = 'https://poker-backend.up.railway.app';
+
+let backendUrl = FPS_LOCAL_URL;
+let chessBackendUrl = CHESS_LOCAL_URL;
+let pokerBackendUrl = POKER_LOCAL_URL;
 
 const backendUrlInput = document.getElementById('backendUrl');
 const chessBackendUrlInput = document.getElementById('chessBackendUrl');
+const pokerBackendUrlInput = document.getElementById('pokerBackendUrl');
 const useLocalBtn = document.getElementById('useLocalBtn');
 const useProductionBtn = document.getElementById('useProductionBtn');
 const testBtn = document.getElementById('testBtn');
@@ -18,7 +26,7 @@ const connectionIndicator = document.getElementById('connectionIndicator');
 const connectionText = document.getElementById('connectionText');
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl']);
+  const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl', 'pokerBackendUrl']);
 
   if (stored.fpsBackendUrl) {
     backendUrl = stored.fpsBackendUrl;
@@ -26,28 +34,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     backendUrl = await detectEnvironment();
   }
 
+  // Set chess URL based on environment (local or production)
   if (stored.chessBackendUrl) {
     chessBackendUrl = stored.chessBackendUrl;
   } else {
-    chessBackendUrl = backendUrl === FPS_PRODUCTION_URL ? CHESS_PRODUCTION_URL : CHESS_LOCAL_URL;
+    chessBackendUrl = backendUrl === FPS_LOCAL_URL ? CHESS_LOCAL_URL : CHESS_PRODUCTION_URL;
+  }
+
+  // Set poker URL based on environment (local or production)
+  if (stored.pokerBackendUrl) {
+    pokerBackendUrl = stored.pokerBackendUrl;
+  } else {
+    pokerBackendUrl = backendUrl === FPS_LOCAL_URL ? POKER_LOCAL_URL : POKER_PRODUCTION_URL;
   }
 
   backendUrlInput.value = backendUrl;
   chessBackendUrlInput.value = chessBackendUrl;
-  await chrome.storage.local.set({ fpsBackendUrl: backendUrl, chessBackendUrl: chessBackendUrl });
+  pokerBackendUrlInput.value = pokerBackendUrl;
+  await chrome.storage.local.set({ fpsBackendUrl: backendUrl, chessBackendUrl: chessBackendUrl, pokerBackendUrl: pokerBackendUrl });
 
   updateButtonStates();
-  await testConnection();
+  await testAllConnections();
 });
 
 async function detectEnvironment() {
-  const isProduction = await testBackendHealth(FPS_PRODUCTION_URL);
-  if (isProduction) {
-    helpText.textContent = 'Railway production servers';
-    return FPS_PRODUCTION_URL;
+  // Check if any local backend is running
+  const fpsLocal = await testBackendHealth(FPS_LOCAL_URL);
+  const chessLocal = await testBackendHealth(CHESS_LOCAL_URL);
+  const pokerLocal = await testBackendHealth(POKER_LOCAL_URL);
+
+  if (fpsLocal || chessLocal || pokerLocal) {
+    helpText.textContent = 'Local development servers';
+    return FPS_LOCAL_URL;
   }
-  helpText.textContent = 'Local development servers';
-  return FPS_LOCAL_URL;
+  helpText.textContent = 'Railway production servers';
+  return FPS_PRODUCTION_URL;
 }
 
 async function testBackendHealth(url) {
@@ -58,7 +79,7 @@ async function testBackendHealth(url) {
     clearTimeout(timeout);
     if (response.ok) {
       const data = await response.json();
-      return data.status === 'healthy';
+      return data.status === 'healthy' ? data : false;
     }
     return false;
   } catch (error) {
@@ -70,7 +91,7 @@ function updateButtonStates() {
   if (backendUrl === FPS_LOCAL_URL) {
     useLocalBtn.classList.add('active');
     useProductionBtn.classList.remove('active');
-    helpText.textContent = 'FPS :3003 | Chess :3004';
+    helpText.textContent = 'FPS :3003 | Chess :3004 | Poker :3005';
   } else {
     useLocalBtn.classList.remove('active');
     useProductionBtn.classList.add('active');
@@ -81,59 +102,88 @@ function updateButtonStates() {
 useLocalBtn.addEventListener('click', async () => {
   backendUrl = FPS_LOCAL_URL;
   chessBackendUrl = CHESS_LOCAL_URL;
+  pokerBackendUrl = POKER_LOCAL_URL;
   backendUrlInput.value = FPS_LOCAL_URL;
   chessBackendUrlInput.value = CHESS_LOCAL_URL;
+  pokerBackendUrlInput.value = POKER_LOCAL_URL;
   await chrome.storage.local.set({
     fpsBackendUrl: FPS_LOCAL_URL,
-    chessBackendUrl: CHESS_LOCAL_URL
+    chessBackendUrl: CHESS_LOCAL_URL,
+    pokerBackendUrl: POKER_LOCAL_URL
   });
   updateButtonStates();
   showStatus('info', 'Switched to local. Testing...');
-  await testConnection();
+  await testAllConnections();
 });
 
 useProductionBtn.addEventListener('click', async () => {
   backendUrl = FPS_PRODUCTION_URL;
   chessBackendUrl = CHESS_PRODUCTION_URL;
+  pokerBackendUrl = POKER_PRODUCTION_URL;
   backendUrlInput.value = FPS_PRODUCTION_URL;
   chessBackendUrlInput.value = CHESS_PRODUCTION_URL;
+  pokerBackendUrlInput.value = POKER_PRODUCTION_URL;
   await chrome.storage.local.set({
     fpsBackendUrl: FPS_PRODUCTION_URL,
-    chessBackendUrl: CHESS_PRODUCTION_URL
+    chessBackendUrl: CHESS_PRODUCTION_URL,
+    pokerBackendUrl: POKER_PRODUCTION_URL
   });
   updateButtonStates();
   showStatus('info', 'Switched to production. Testing...');
-  await testConnection();
+  await testAllConnections();
 });
 
 testBtn.addEventListener('click', async () => {
-  showStatus('info', 'Testing...');
-  await testConnection();
+  showStatus('info', 'Testing all backends...');
+  await testAllConnections();
 });
 
-async function testConnection() {
+async function testAllConnections() {
   connectionText.textContent = 'Testing...';
   connectionIndicator.className = 'connection-indicator checking';
 
-  try {
-    const response = await fetch(`${backendUrl}/health`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  // Test all backends in parallel
+  const [fpsResult, chessResult, pokerResult] = await Promise.all([
+    testBackendHealth(backendUrl),
+    testBackendHealth(chessBackendUrl),
+    testBackendHealth(pokerBackendUrl)
+  ]);
 
-    const data = await response.json();
+  const results = [];
+  let anyOnline = false;
 
-    if (data.status === 'healthy') {
-      showStatus('success', `Connected!\n\nPlayers: ${data.players || 0}\nBots: ${data.bots || 0}\nRound: ${data.round || 1}\nScore: Red ${data.scores?.red || 0} - Blue ${data.scores?.blue || 0}`);
-      connectionIndicator.className = 'connection-indicator online';
-      connectionText.textContent = 'Server Online';
-      return true;
-    } else {
-      throw new Error('Health check failed');
-    }
-  } catch (error) {
-    showStatus('error', `Failed: ${error.message}\n\nStart backend:\n  cd fps-backend\n  yarn install\n  yarn start`);
+  // FPS Status
+  if (fpsResult) {
+    results.push(`FPS: Online (${fpsResult.players || 0} players)`);
+    anyOnline = true;
+  } else {
+    results.push('FPS: Offline');
+  }
+
+  // Chess Status
+  if (chessResult) {
+    results.push(`Chess: Online`);
+    anyOnline = true;
+  } else {
+    results.push('Chess: Offline');
+  }
+
+  // Poker Status
+  if (pokerResult) {
+    results.push(`Poker: Online (${pokerResult.tables || 0} tables)`);
+    anyOnline = true;
+  } else {
+    results.push('Poker: Offline');
+  }
+
+  if (anyOnline) {
+    showStatus('success', results.join('\n'));
+    connectionIndicator.className = 'connection-indicator online';
+    connectionText.textContent = 'Backend(s) Online';
+  } else {
+    showStatus('error', results.join('\n') + '\n\nStart a backend:\n  cd [game]-backend\n  yarn start');
     connectionIndicator.className = 'connection-indicator offline';
-    connectionText.textContent = 'Server Offline';
-    return false;
+    connectionText.textContent = 'All Offline';
   }
 }
 

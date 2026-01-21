@@ -2,7 +2,8 @@ console.log('[Game Hub Content] Ready');
 
 const processedMessages = new Set();
 
-const VALID_PREFIXES = ['FPS_', 'GAME_', 'CHESS_'];
+// Valid message prefixes for all supported games
+const VALID_PREFIXES = ['FPS_', 'GAME_', 'CHESS_', 'POKER_'];
 
 function isValidGameMessage(type) {
   return VALID_PREFIXES.some(prefix => type.startsWith(prefix));
@@ -15,18 +16,26 @@ window.addEventListener('message', async (event) => {
   if (!isValidGameMessage(message.type)) return;
   if (message.type.endsWith('_RESPONSE')) return;
 
+  // Messages that come FROM background TO page (don't forward back)
   const backgroundToPageMessages = [
+    // FPS messages
     'FPS_CONNECTED', 'FPS_DISCONNECTED', 'FPS_GAME_STATE', 'FPS_PLAYER_JOINED',
     'FPS_PLAYER_LEFT', 'FPS_PLAYER_MOVED', 'FPS_BULLET_FIRED', 'FPS_PLAYER_DAMAGED',
     'FPS_PLAYER_KILLED', 'FPS_PLAYER_RESPAWNED', 'FPS_PLAYER_STATS', 'FPS_GLOBAL_STATS',
     'FPS_TEAM_ASSIGNED', 'FPS_BOT_SPAWNED', 'FPS_BOT_REMOVED', 'FPS_BOTS_UPDATED',
     'FPS_ROUND_START', 'FPS_ROUND_ACTIVE', 'FPS_ROUND_END', 'FPS_MATCH_END',
     'FPS_RELOAD_START', 'FPS_RELOAD_COMPLETE', 'yourSocketId', 'playerStats',
+    // Chess messages from background
     'CHESS_CONNECTED', 'CHESS_DISCONNECTED', 'CHESS_WAITING', 'CHESS_MATCH_FOUND',
     'CHESS_MATCH_STATE', 'CHESS_MOVE_MADE', 'CHESS_GAME_OVER', 'CHESS_OPPONENT_DISCONNECTED',
     'CHESS_OPPONENT_RECONNECTED', 'CHESS_DRAW_OFFERED', 'CHESS_ERROR',
     'CHESS_INVALID_MOVE', 'CHESS_LEGAL_MOVES', 'CHESS_MATCH_ENDED',
     'CHESS_WAITING_FOR_OPPONENT', 'CHESS_MATCHMAKING_CANCELLED',
+    // Poker messages from background
+    'POKER_SEATED', 'POKER_TABLE_STATE', 'POKER_PLAYER_ACTION', 'POKER_HAND_RESULT',
+    'POKER_INVALID_ACTION', 'POKER_OUT_OF_CHIPS', 'POKER_ERROR', 'POKER_GLOBAL_STATS',
+    'POKER_SPECTATING', 'POKER_SPECTATOR_TO_PLAYER', 'POKER_LEFT_TABLE',
+    // Generic game messages
     'GAME_CONNECTED', 'GAME_DISCONNECTED', 'GAME_GLOBAL_STATS'
   ];
   if (backgroundToPageMessages.includes(message.type)) return;
