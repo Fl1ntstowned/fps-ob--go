@@ -1,6 +1,5 @@
 console.log('[Game Hub] Background service worker started');
 
-// ===== GAME SERVER CONFIGURATION =====
 let serverConfig = {
   fps: 'http://localhost:3003',
   chess: 'http://localhost:3004',
@@ -24,12 +23,10 @@ chrome.runtime.onStartup.addListener(() => {
 
 importScripts('socket.io.min.js');
 
-// Tab sockets now store game type
-const tabSockets = new Map(); // tabId -> { socket, gameType }
+const tabSockets = new Map();
 
-// Deduplication: track processed message requestIds to prevent duplicate sends
-const processedRequests = new Map(); // tabId -> Set of requestIds
-const REQUEST_EXPIRY_MS = 5000; // Clean up old requestIds after 5 seconds
+const processedRequests = new Map();
+const REQUEST_EXPIRY_MS = 5000;
 
 function isRequestProcessed(tabId, requestId) {
   if (!requestId) return false;
@@ -45,10 +42,8 @@ function isRequestProcessed(tabId, requestId) {
     return true;
   }
 
-  // Mark as processed with timestamp
   tabRequests.set(requestId, Date.now());
 
-  // Clean up old entries
   const now = Date.now();
   for (const [id, timestamp] of tabRequests.entries()) {
     if (now - timestamp > REQUEST_EXPIRY_MS) {
@@ -61,7 +56,6 @@ function isRequestProcessed(tabId, requestId) {
 
 console.log('[Game Hub] Socket.io loaded');
 
-// Load server config from storage
 async function loadServerConfig() {
   const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl', 'pokerBackendUrl']);
   serverConfig = {
@@ -74,8 +68,7 @@ async function loadServerConfig() {
 
 loadServerConfig();
 
-// ===== POKER AUTHENTICATION VIA HTTP API =====
-const tabAuthTokens = new Map(); // tabId -> token
+const tabAuthTokens = new Map();
 
 async function handlePokerLogin(tabId, username, password) {
   const backendUrl = serverConfig.poker;
@@ -133,13 +126,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const tabId = sender.tab?.id;
   console.log('[Game Hub] Message:', message.type, 'from tab:', tabId, 'requestId:', message.requestId);
 
-  // Check for duplicate requests (prevents multi-frame duplicate sends)
   if (message.requestId && isRequestProcessed(tabId, message.requestId)) {
     sendResponse({ success: true, duplicate: true });
     return true;
   }
 
-  // ===== FPS GAME INIT =====
   if (message.type === 'FPS_INIT') {
     handleFpsInit(tabId).then(() => {
       sendResponse({ success: true });
@@ -150,7 +141,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // ===== CHESS GAME INIT =====
   if (message.type === 'GAME_INIT' && message.gameType === 'chess') {
     handleChessInit(tabId).then(() => {
       sendResponse({ success: true, gameType: 'chess' });
@@ -161,7 +151,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // ===== POKER GAME INIT =====
   if (message.type === 'GAME_INIT' && message.gameType === 'poker') {
     handlePokerInit(tabId).then(() => {
       sendResponse({ success: true, gameType: 'poker' });
@@ -172,7 +161,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // Get tab socket info
   const tabSocket = tabSockets.get(tabId);
   if (!tabSocket || !tabSocket.socket || !tabSocket.socket.connected) {
     sendResponse({ success: false, error: 'Not connected to backend' });
@@ -181,7 +169,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   const gameType = tabSocket.gameType;
 
-  // ===== FPS MESSAGES =====
   if (gameType === 'fps') {
     if (message.type === 'FPS_JOIN_GAME') {
       tabSocket.socket.emit('joinGame', { playerName: message.playerName });
@@ -239,7 +226,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   }
 
-  // ===== CHESS MESSAGES =====
   if (gameType === 'chess') {
     if (message.type === 'GAME_SET_PLAYER_NAME') {
       tabSocket.socket.emit('setPlayerName', message.playerName);
@@ -315,9 +301,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   }
 
-  // ===== POKER MESSAGES =====
   if (gameType === 'poker') {
-    // Authentication via HTTP API
     if (message.type === 'POKER_LOGIN') {
       handlePokerLogin(tabId, message.username, message.password);
       sendResponse({ success: true });
@@ -330,7 +314,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
     }
 
-    // Socket authentication with token
     if (message.type === 'POKER_AUTHENTICATE') {
       tabSocket.socket.emit('authenticate', { token: message.token });
       console.log('[Game Hub] Tab', tabId, 'authenticating socket');
@@ -407,7 +390,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// ===== FPS INIT =====
 async function handleFpsInit(tabId) {
   console.log('[Game Hub] FPS_INIT for tab:', tabId);
   await loadServerConfig();
@@ -427,7 +409,6 @@ async function handleFpsInit(tabId) {
   await createFpsSocket(tabId);
 }
 
-// ===== CHESS INIT =====
 async function handleChessInit(tabId) {
   console.log('[Game Hub] GAME_INIT (chess) for tab:', tabId);
   await loadServerConfig();
@@ -447,7 +428,6 @@ async function handleChessInit(tabId) {
   await createChessSocket(tabId);
 }
 
-// ===== FPS SOCKET =====
 async function createFpsSocket(tabId) {
   console.log('[Game Hub] Creating FPS socket for tab:', tabId, 'URL:', serverConfig.fps);
 
@@ -568,7 +548,6 @@ async function createFpsSocket(tabId) {
   });
 }
 
-// ===== CHESS SOCKET =====
 async function createChessSocket(tabId) {
   console.log('[Game Hub] Creating Chess socket for tab:', tabId, 'URL:', serverConfig.chess);
 
@@ -663,7 +642,6 @@ async function createChessSocket(tabId) {
   });
 }
 
-// ===== POKER INIT =====
 async function handlePokerInit(tabId) {
   console.log('[Game Hub] GAME_INIT (poker) for tab:', tabId);
   await loadServerConfig();
@@ -683,7 +661,6 @@ async function handlePokerInit(tabId) {
   await createPokerSocket(tabId);
 }
 
-// ===== POKER SOCKET =====
 async function createPokerSocket(tabId) {
   console.log('[Game Hub] Creating Poker socket for tab:', tabId, 'URL:', serverConfig.poker);
 
@@ -760,7 +737,6 @@ async function createPokerSocket(tabId) {
     sendToTab(tabId, { type: 'POKER_GLOBAL_STATS', stats });
   });
 
-  // Spectator events
   socket.on('spectating', (data) => {
     console.log('[Game Hub] Tab', tabId, 'spectating poker table:', data.tableId);
     sendToTab(tabId, { type: 'POKER_SPECTATING', ...data });
@@ -795,9 +771,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     if (tabSocket.socket) tabSocket.socket.disconnect();
     tabSockets.delete(tabId);
   }
-  // Clean up deduplication tracking for closed tab
   processedRequests.delete(tabId);
-  // Clean up auth tokens
   tabAuthTokens.delete(tabId);
 });
 
@@ -807,7 +781,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     const tabSocket = tabSockets.get(tabId);
     if (tabSocket && tabSocket.socket) tabSocket.socket.disconnect();
     tabSockets.delete(tabId);
-    // Clean up deduplication tracking for reloading tab
     processedRequests.delete(tabId);
   }
 });

@@ -1,12 +1,9 @@
-// FPS Backend URLs
 const FPS_LOCAL_URL = 'http://localhost:3003';
 const FPS_PRODUCTION_URL = 'https://fps-game-backend-production.up.railway.app';
 
-// Chess Backend URLs
 const CHESS_LOCAL_URL = 'http://localhost:3004';
 const CHESS_PRODUCTION_URL = 'https://chess-game-backend-production.up.railway.app';
 
-// Poker Backend URLs
 const POKER_LOCAL_URL = 'http://localhost:3005';
 const POKER_PRODUCTION_URL = 'https://poker-backend.up.railway.app';
 
@@ -34,14 +31,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     backendUrl = await detectEnvironment();
   }
 
-  // Set chess URL based on environment (local or production)
   if (stored.chessBackendUrl) {
     chessBackendUrl = stored.chessBackendUrl;
   } else {
     chessBackendUrl = backendUrl === FPS_LOCAL_URL ? CHESS_LOCAL_URL : CHESS_PRODUCTION_URL;
   }
 
-  // Set poker URL based on environment (local or production)
   if (stored.pokerBackendUrl) {
     pokerBackendUrl = stored.pokerBackendUrl;
   } else {
@@ -58,7 +53,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function detectEnvironment() {
-  // Check if any local backend is running
   const fpsLocal = await testBackendHealth(FPS_LOCAL_URL);
   const chessLocal = await testBackendHealth(CHESS_LOCAL_URL);
   const pokerLocal = await testBackendHealth(POKER_LOCAL_URL);
@@ -142,7 +136,6 @@ async function testAllConnections() {
   connectionText.textContent = 'Testing...';
   connectionIndicator.className = 'connection-indicator checking';
 
-  // Test all backends in parallel
   const [fpsResult, chessResult, pokerResult] = await Promise.all([
     testBackendHealth(backendUrl),
     testBackendHealth(chessBackendUrl),
@@ -152,7 +145,6 @@ async function testAllConnections() {
   const results = [];
   let anyOnline = false;
 
-  // FPS Status
   if (fpsResult) {
     results.push(`FPS: Online (${fpsResult.players || 0} players)`);
     anyOnline = true;
@@ -160,7 +152,6 @@ async function testAllConnections() {
     results.push('FPS: Offline');
   }
 
-  // Chess Status
   if (chessResult) {
     results.push(`Chess: Online`);
     anyOnline = true;
@@ -168,7 +159,6 @@ async function testAllConnections() {
     results.push('Chess: Offline');
   }
 
-  // Poker Status
   if (pokerResult) {
     results.push(`Poker: Online (${pokerResult.tables || 0} tables)`);
     anyOnline = true;
