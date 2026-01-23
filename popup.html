@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FPS Game Settings</title>
+  <title>Game Hub Settings</title>
   <style>
     body {
       width: 340px;
@@ -41,66 +41,6 @@
       letter-spacing: 0.5px;
       opacity: 0.8;
       margin-bottom: 8px;
-    }
-    .button-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .env-button {
-      padding: 10px 14px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.05);
-      color: white;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .env-button:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px);
-    }
-    .env-button.active {
-      background: rgba(255, 68, 68, 0.2);
-      border-color: #ff4444;
-      box-shadow: 0 0 12px rgba(255, 68, 68, 0.3);
-    }
-    .env-button.active.blue {
-      background: rgba(68, 68, 255, 0.2);
-      border-color: #4444ff;
-      box-shadow: 0 0 12px rgba(68, 68, 255, 0.3);
-    }
-    input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.05);
-      color: white;
-      border-radius: 8px;
-      font-size: 12px;
-      font-family: 'Courier New', monospace;
-      transition: all 0.2s;
-      box-sizing: border-box;
-    }
-    input:focus {
-      outline: none;
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.4);
-    }
-    input::placeholder {
-      color: rgba(255, 255, 255, 0.4);
-    }
-    input:read-only {
-      cursor: not-allowed;
-      opacity: 0.7;
     }
     button.test-btn {
       width: 100%;
@@ -176,11 +116,6 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
-    .help-text {
-      font-size: 10px;
-      opacity: 0.6;
-      margin-top: 6px;
-    }
   </style>
 </head>
 <body>
@@ -189,17 +124,6 @@
     <p class="subtitle">Multiplayer games on Bitcoin Ordinals</p>
   </div>
   <div class="content">
-    <div class="section">
-      <div class="section-title">Backend Server</div>
-      <div class="button-group">
-        <button id="useLocalBtn" class="env-button">Local</button>
-        <button id="useProductionBtn" class="env-button blue">Production</button>
-      </div>
-      <div class="help-text" id="helpText">Select environment</div>
-      <input type="hidden" id="backendUrl">
-      <input type="hidden" id="chessBackendUrl">
-      <input type="hidden" id="pokerBackendUrl">
-    </div>
     <div class="section">
       <button id="testBtn" class="test-btn">Test Connection</button>
       <div id="status"></div>

@@ -7,10 +7,9 @@
     "storage"
   ],
   "host_permissions": [
-    "http://localhost:3003/*",
-    "http://localhost:3004/*",
-    "http://localhost:3005/*",
     "https://fps-game-backend-production.up.railway.app/*",
+    "https://chess-game-backend-production.up.railway.app/*",
+    "https://poker-backend.up.railway.app/*",
     "https://*.up.railway.app/*",
     "http://*/*",
     "https://*/*"
