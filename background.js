@@ -383,6 +383,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true });
       return true;
     }
+
+    if (message.type === 'POKER_CHAT_MESSAGE') {
+      tabSocket.socket.emit('chatMessage', { message: message.message });
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'POKER_EMOJI') {
+      tabSocket.socket.emit('emojiReaction', { emoji: message.emoji });
+      sendResponse({ success: true });
+      return true;
+    }
   }
 
   console.log('[Game Hub] Unhandled message type:', message.type, 'for game:', gameType);
@@ -750,6 +762,14 @@ async function createPokerSocket(tabId) {
   socket.on('leftTable', (data) => {
     console.log('[Game Hub] Tab', tabId, 'left poker table');
     sendToTab(tabId, { type: 'POKER_LEFT_TABLE', ...data });
+  });
+
+  socket.on('chatMessage', (data) => {
+    sendToTab(tabId, { type: 'POKER_CHAT_MESSAGE', ...data });
+  });
+
+  socket.on('emojiReaction', (data) => {
+    sendToTab(tabId, { type: 'POKER_EMOJI_REACTION', ...data });
   });
 }
 
