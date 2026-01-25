@@ -85,7 +85,7 @@ async function handlePokerLogin(tabId, username, password) {
 
     if (result.success) {
       tabAuthTokens.set(tabId, result.token);
-      console.log('[Game Hub] Tab', tabId, 'poker login successful:', result.username, 'Balance:', result.balance);
+      console.log('[Game Hub] Tab', tabId, 'poker login successful:', result.username, 'Balance:', result.balance, 'Admin:', result.isAdmin);
     } else {
       console.log('[Game Hub] Tab', tabId, 'poker login failed:', result.error);
     }
@@ -329,8 +329,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'POKER_JOIN_QUEUE') {
-      tabSocket.socket.emit('joinQueue');
-      console.log('[Game Hub] Tab', tabId, 'joining poker queue');
+      tabSocket.socket.emit('joinQueue', { maxSeats: message.maxSeats || 6 });
+      console.log('[Game Hub] Tab', tabId, 'joining poker queue, maxSeats:', message.maxSeats || 6);
       sendResponse({ success: true });
       return true;
     }
