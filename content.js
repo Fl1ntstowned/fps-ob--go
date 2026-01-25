@@ -20,8 +20,8 @@ window.addEventListener('message', async (event) => {
     'FPS_PLAYER_LEFT', 'FPS_PLAYER_MOVED', 'FPS_BULLET_FIRED', 'FPS_PLAYER_DAMAGED',
     'FPS_PLAYER_KILLED', 'FPS_PLAYER_RESPAWNED', 'FPS_PLAYER_STATS', 'FPS_GLOBAL_STATS',
     'FPS_TEAM_ASSIGNED', 'FPS_BOT_SPAWNED', 'FPS_BOT_REMOVED', 'FPS_BOTS_UPDATED',
-    'FPS_ROUND_START', 'FPS_ROUND_ACTIVE', 'FPS_ROUND_END', 'FPS_MATCH_END',
-    'FPS_RELOAD_START', 'FPS_RELOAD_COMPLETE', 'yourSocketId', 'playerStats',
+    'FPS_BOT_RESPAWNED', 'FPS_ROUND_START', 'FPS_ROUND_ACTIVE', 'FPS_ROUND_END', 'FPS_MATCH_END',
+    'FPS_RELOAD_START', 'FPS_RELOAD_COMPLETE', 'FPS_RADIO_STATE', 'yourSocketId', 'playerStats',
     'CHESS_CONNECTED', 'CHESS_DISCONNECTED', 'CHESS_WAITING', 'CHESS_MATCH_FOUND',
     'CHESS_MATCH_STATE', 'CHESS_MOVE_MADE', 'CHESS_GAME_OVER', 'CHESS_OPPONENT_DISCONNECTED',
     'CHESS_OPPONENT_RECONNECTED', 'CHESS_DRAW_OFFERED', 'CHESS_ERROR',
@@ -36,7 +36,6 @@ window.addEventListener('message', async (event) => {
 
   const messageKey = `${message.type}_${message.requestId}`;
   if (processedMessages.has(messageKey)) {
-    console.log('[Game Hub Content] Ignoring duplicate:', messageKey);
     return;
   }
   processedMessages.add(messageKey);

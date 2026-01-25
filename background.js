@@ -224,6 +224,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true });
       return true;
     }
+
+    if (message.type === 'FPS_RADIO_STATE') {
+      tabSocket.socket.emit('radioState', { playing: message.playing });
+      sendResponse({ success: true });
+      return true;
+    }
   }
 
   if (gameType === 'chess') {
@@ -557,6 +563,10 @@ async function createFpsSocket(tabId) {
 
   socket.on('reloadComplete', (data) => {
     sendToTab(tabId, { type: 'FPS_RELOAD_COMPLETE', ...data });
+  });
+
+  socket.on('radioState', (data) => {
+    sendToTab(tabId, { type: 'FPS_RADIO_STATE', ...data });
   });
 }
 
