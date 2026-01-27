@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Obi Satoshi's Game Hub",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Multiplayer games on Bitcoin ordinals - FPS, Chess, Poker, and more",
   "permissions": [
     "storage"
