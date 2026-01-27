@@ -1,6 +1,7 @@
 const FPS_URL = 'https://fps-game-backend-production.up.railway.app';
 const CHESS_URL = 'https://chess-game-backend-production.up.railway.app';
 const POKER_URL = 'https://poker-backend.up.railway.app';
+const LOBBY_URL = 'http://localhost:3006';
 
 const testBtn = document.getElementById('testBtn');
 const statusDiv = document.getElementById('status');
@@ -11,7 +12,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await chrome.storage.local.set({
     fpsBackendUrl: FPS_URL,
     chessBackendUrl: CHESS_URL,
-    pokerBackendUrl: POKER_URL
+    pokerBackendUrl: POKER_URL,
+    lobbyBackendUrl: LOBBY_URL
   });
   await testAllConnections();
 });
@@ -41,10 +43,11 @@ async function testAllConnections() {
   connectionText.textContent = 'Testing...';
   connectionIndicator.className = 'connection-indicator checking';
 
-  const [fpsResult, chessResult, pokerResult] = await Promise.all([
+  const [fpsResult, chessResult, pokerResult, lobbyResult] = await Promise.all([
     testBackendHealth(FPS_URL),
     testBackendHealth(CHESS_URL),
-    testBackendHealth(POKER_URL)
+    testBackendHealth(POKER_URL),
+    testBackendHealth(LOBBY_URL)
   ]);
 
   const results = [];
@@ -69,6 +72,13 @@ async function testAllConnections() {
     anyOnline = true;
   } else {
     results.push('Poker: Offline');
+  }
+
+  if (lobbyResult) {
+    results.push(`Lobby: Online (${lobbyResult.players || 0} players)`);
+    anyOnline = true;
+  } else {
+    results.push('Lobby: Offline');
   }
 
   if (anyOnline) {

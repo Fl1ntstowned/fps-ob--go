@@ -2,7 +2,7 @@ console.log('[Game Hub Content] Ready');
 
 const processedMessages = new Set();
 
-const VALID_PREFIXES = ['FPS_', 'GAME_', 'CHESS_', 'POKER_'];
+const VALID_PREFIXES = ['FPS_', 'GAME_', 'CHESS_', 'POKER_', 'LOBBY_'];
 
 function isValidGameMessage(type) {
   return VALID_PREFIXES.some(prefix => type.startsWith(prefix));
@@ -30,7 +30,9 @@ window.addEventListener('message', async (event) => {
     'POKER_SEATED', 'POKER_TABLE_STATE', 'POKER_PLAYER_ACTION', 'POKER_HAND_RESULT',
     'POKER_INVALID_ACTION', 'POKER_OUT_OF_CHIPS', 'POKER_ERROR', 'POKER_GLOBAL_STATS',
     'POKER_SPECTATING', 'POKER_SPECTATOR_TO_PLAYER', 'POKER_LEFT_TABLE',
-    'GAME_CONNECTED', 'GAME_DISCONNECTED', 'GAME_GLOBAL_STATS'
+    'GAME_CONNECTED', 'GAME_DISCONNECTED', 'GAME_GLOBAL_STATS',
+    'LOBBY_CONNECTED', 'LOBBY_DISCONNECTED', 'LOBBY_STATE', 'LOBBY_PLAYER_JOINED',
+    'LOBBY_PLAYER_LEFT', 'LOBBY_PLAYER_MOVED', 'LOBBY_RADIO_STATE', 'LOBBY_PLAYER_COUNT'
   ];
   if (backgroundToPageMessages.includes(message.type)) return;
 

@@ -3,7 +3,8 @@ console.log('[Game Hub] Background service worker started');
 let serverConfig = {
   fps: 'https://fps-game-backend-production.up.railway.app',
   chess: 'https://chess-game-backend-production.up.railway.app',
-  poker: 'https://poker-backend.up.railway.app'
+  poker: 'https://poker-backend.up.railway.app',
+  lobby: 'http://localhost:3006'
 };
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -12,7 +13,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.storage.local.set({
       fpsBackendUrl: 'https://fps-game-backend-production.up.railway.app',
       chessBackendUrl: 'https://chess-game-backend-production.up.railway.app',
-      pokerBackendUrl: 'https://poker-backend.up.railway.app'
+      pokerBackendUrl: 'https://poker-backend.up.railway.app',
+      lobbyBackendUrl: 'http://localhost:3006'
     });
   }
 });
@@ -57,11 +59,12 @@ function isRequestProcessed(tabId, requestId) {
 console.log('[Game Hub] Socket.io loaded');
 
 async function loadServerConfig() {
-  const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl', 'pokerBackendUrl']);
+  const stored = await chrome.storage.local.get(['fpsBackendUrl', 'chessBackendUrl', 'pokerBackendUrl', 'lobbyBackendUrl']);
   serverConfig = {
     fps: stored.fpsBackendUrl || 'https://fps-game-backend-production.up.railway.app',
     chess: stored.chessBackendUrl || 'https://chess-game-backend-production.up.railway.app',
-    poker: stored.pokerBackendUrl || 'https://poker-backend.up.railway.app'
+    poker: stored.pokerBackendUrl || 'https://poker-backend.up.railway.app',
+    lobby: stored.lobbyBackendUrl || 'http://localhost:3006'
   };
   console.log('[Game Hub] Loaded server config:', serverConfig);
 }
@@ -161,6 +164,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === 'LOBBY_INIT') {
+    handleLobbyInit(tabId).then(() => {
+      sendResponse({ success: true });
+    }).catch(error => {
+      console.error('[Game Hub] Lobby Init error:', error);
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  }
+
   const tabSocket = tabSockets.get(tabId);
   if (!tabSocket || !tabSocket.socket || !tabSocket.socket.connected) {
     sendResponse({ success: false, error: 'Not connected to backend' });
@@ -226,6 +239,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'FPS_RADIO_STATE') {
+      tabSocket.socket.emit('radioState', { playing: message.playing });
+      sendResponse({ success: true });
+      return true;
+    }
+  }
+
+  if (gameType === 'lobby') {
+    if (message.type === 'LOBBY_JOIN') {
+      tabSocket.socket.emit('joinLobby', { playerName: message.playerName });
+      console.log('[Game Hub] Tab', tabId, 'joining lobby as:', message.playerName);
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'LOBBY_PLAYER_MOVE') {
+      tabSocket.socket.emit('playerMove', {
+        position: message.position,
+        rotation: message.rotation
+      });
+      sendResponse({ success: true });
+      return true;
+    }
+
+    if (message.type === 'LOBBY_RADIO_STATE') {
       tabSocket.socket.emit('radioState', { playing: message.playing });
       sendResponse({ success: true });
       return true;
@@ -780,6 +817,83 @@ async function createPokerSocket(tabId) {
 
   socket.on('emojiReaction', (data) => {
     sendToTab(tabId, { type: 'POKER_EMOJI_REACTION', ...data });
+  });
+}
+
+async function handleLobbyInit(tabId) {
+  console.log('[Game Hub] Lobby init for tab:', tabId);
+
+  const existing = tabSockets.get(tabId);
+  if (existing) {
+    if (existing.socket && existing.socket.connected && existing.gameType === 'lobby') {
+      console.log('[Game Hub] Tab', tabId, 'already connected to lobby');
+      sendToTab(tabId, { type: 'LOBBY_CONNECTED' });
+      return;
+    }
+    if (existing.socket) {
+      existing.socket.disconnect();
+    }
+    tabSockets.delete(tabId);
+  }
+
+  await createLobbySocket(tabId);
+}
+
+async function createLobbySocket(tabId) {
+  console.log('[Game Hub] Creating Lobby socket for tab:', tabId, 'URL:', serverConfig.lobby);
+
+  const socketConfig = {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 10000
+  };
+
+  const socket = io(serverConfig.lobby, socketConfig);
+
+  tabSockets.set(tabId, { socket, gameType: 'lobby' });
+
+  socket.on('connect', () => {
+    console.log('[Game Hub] Lobby connected for tab:', tabId);
+    sendToTab(tabId, { type: 'LOBBY_CONNECTED' });
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('[Game Hub] Lobby disconnected for tab:', tabId, 'reason:', reason);
+    sendToTab(tabId, { type: 'LOBBY_DISCONNECTED', reason });
+  });
+
+  socket.on('connect_error', (error) => {
+    console.log('[Game Hub] Lobby connection error for tab:', tabId, error.message);
+  });
+
+  socket.on('yourSocketId', (data) => {
+    sendToTab(tabId, { type: 'yourSocketId', id: data.id });
+  });
+
+  socket.on('lobbyState', (state) => {
+    sendToTab(tabId, { type: 'LOBBY_STATE', state });
+  });
+
+  socket.on('playerJoined', (data) => {
+    sendToTab(tabId, { type: 'LOBBY_PLAYER_JOINED', ...data });
+  });
+
+  socket.on('playerLeft', (id) => {
+    sendToTab(tabId, { type: 'LOBBY_PLAYER_LEFT', id });
+  });
+
+  socket.on('playerMoved', (data) => {
+    sendToTab(tabId, { type: 'LOBBY_PLAYER_MOVED', ...data });
+  });
+
+  socket.on('radioState', (data) => {
+    sendToTab(tabId, { type: 'LOBBY_RADIO_STATE', ...data });
+  });
+
+  socket.on('playerCount', (data) => {
+    sendToTab(tabId, { type: 'LOBBY_PLAYER_COUNT', ...data });
   });
 }
 
