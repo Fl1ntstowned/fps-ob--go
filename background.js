@@ -4,7 +4,7 @@ let serverConfig = {
   fps: 'https://fps-game-backend-production.up.railway.app',
   chess: 'https://chess-game-backend-production.up.railway.app',
   poker: 'https://poker-backend.up.railway.app',
-  lobby: 'http://localhost:3006'
+  lobby: 'https://lobby-backend-production.up.railway.app'
 };
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -14,7 +14,7 @@ chrome.runtime.onInstalled.addListener((details) => {
       fpsBackendUrl: 'https://fps-game-backend-production.up.railway.app',
       chessBackendUrl: 'https://chess-game-backend-production.up.railway.app',
       pokerBackendUrl: 'https://poker-backend.up.railway.app',
-      lobbyBackendUrl: 'http://localhost:3006'
+      lobbyBackendUrl: 'https://lobby-backend-production.up.railway.app'
     });
   }
 });
@@ -64,7 +64,7 @@ async function loadServerConfig() {
     fps: stored.fpsBackendUrl || 'https://fps-game-backend-production.up.railway.app',
     chess: stored.chessBackendUrl || 'https://chess-game-backend-production.up.railway.app',
     poker: stored.pokerBackendUrl || 'https://poker-backend.up.railway.app',
-    lobby: stored.lobbyBackendUrl || 'http://localhost:3006'
+    lobby: stored.lobbyBackendUrl || 'https://lobby-backend-production.up.railway.app'
   };
   console.log('[Game Hub] Loaded server config:', serverConfig);
 }

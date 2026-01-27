@@ -1,7 +1,7 @@
 const FPS_URL = 'https://fps-game-backend-production.up.railway.app';
 const CHESS_URL = 'https://chess-game-backend-production.up.railway.app';
 const POKER_URL = 'https://poker-backend.up.railway.app';
-const LOBBY_URL = 'http://localhost:3006';
+const LOBBY_URL = 'https://lobby-backend-production.up.railway.app';
 
 const testBtn = document.getElementById('testBtn');
 const statusDiv = document.getElementById('status');
