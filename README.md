@@ -4,9 +4,9 @@ Play on-chain multiplayer games inscribed on Bitcoin Ordinals.
 
 ## Game Hub Inscription
 
-**Inscription ID:** `d97f6145555b098fc6b236754f92bb3131ba7954ee58e1b6e3584a8cebe92d8bi0`
+**Inscription ID:** `4ec29a8b1953f0058ca9a92e9975fd99f571c8dc24aa6f066cc51b9e7d04ad1ai0`
 
-**Play here:** [ord.io/preview/d97f6145555b098fc6b236754f92bb3131ba7954ee58e1b6e3584a8cebe92d8bi0](https://www.ord.io/preview/d97f6145555b098fc6b236754f92bb3131ba7954ee58e1b6e3584a8cebe92d8bi0?type=text/html&raw=true)
+**Play here:** [ord.io/preview/4ec29a8b1953f0058ca9a92e9975fd99f571c8dc24aa6f066cc51b9e7d04ad1ai0](https://www.ord.io/preview/4ec29a8b1953f0058ca9a92e9975fd99f571c8dc24aa6f066cc51b9e7d04ad1ai0?type=text/html&raw=true)
 
 > **Recommended:** Use ord.io and click the fullscreen button for the best experience.
 
